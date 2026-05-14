@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f7f4ee;
+  color: #172026;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+  min-height: 297mm;
+  padding: 10mm;
+  background: white;
+  box-shadow: 0 16px 40px rgb(23 32 38 / 0.16);
+  margin: 0 auto 24px;
+  box-sizing: border-box;
+}
+
+.print-page {
+  break-after: page;
+  page-break-after: always;
+}
+
+.card-grid {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 0;
+}
+
+.cut-lines > .card-cell {
+  border: 0.35mm dashed #7d8790;
+}
+
+.card-cell {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 210mm;
+    background: white !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-root {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  .a4-page {
+    margin: 0;
+    box-shadow: none;
+    background: white !important;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .print-front-only .back-page,
+  .print-back-only .front-page {
+    display: none !important;
+  }
+}
