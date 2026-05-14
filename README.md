@@ -187,3 +187,7 @@ For A4 portrait, the page is `210mm x 297mm` with `10mm` padding, giving a print
 
 - Sheets are not synced across devices.
 - Browser and printer drivers may render print margins differently, so a physical test print is recommended before printing large batches.
+
+## Copyright
+
+Copyright (c) 2026 VocabSheet. All rights reserved.

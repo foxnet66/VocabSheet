@@ -27,6 +27,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
         </header>
         {children}
+        <footer className="no-print border-t border-line bg-white/70">
+          <div className="mx-auto max-w-6xl px-5 py-5 text-xs text-stone-500">
+            © 2026 VocabSheet. All rights reserved.
+          </div>
+        </footer>
       </body>
     </html>
   );
