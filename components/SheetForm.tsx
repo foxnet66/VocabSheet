@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { type ChangeEvent, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/Button";
 import { createId } from "@/lib/id";
@@ -37,13 +37,78 @@ function createEmptySheet(): WordSheet {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeImportedSheet(value: unknown): WordSheet {
+  if (!isRecord(value)) {
+    throw new Error("The selected file is not a VocabSheet JSON object.");
+  }
+
+  const rawWords = value.words;
+  const rawLayout = value.layout;
+
+  if (!Array.isArray(rawWords) || !isRecord(rawLayout)) {
+    throw new Error("The selected file is missing words or layout data.");
+  }
+
+  const words = rawWords
+    .filter(isRecord)
+    .map((item) => ({
+      id: createId("word"),
+      word: typeof item.word === "string" ? item.word : "",
+      definition: typeof item.definition === "string" ? item.definition : ""
+    }))
+    .filter((item) => item.word.trim() || item.definition.trim());
+
+  if (!words.length) {
+    throw new Error("The selected file does not contain any words.");
+  }
+
+  const now = new Date().toISOString();
+  const asNumber = (key: string, fallback: number) => {
+    const nextValue = rawLayout[key];
+    return typeof nextValue === "number" && Number.isFinite(nextValue) ? nextValue : fallback;
+  };
+
+  return {
+    id: createId("sheet"),
+    title: typeof value.title === "string" && value.title.trim() ? `${value.title.trim()} import` : "Imported vocabulary sheet",
+    words,
+    sourceType: "json",
+    layout: {
+      ...defaultLayout,
+      paperSize: "A4",
+      orientation: rawLayout.orientation === "landscape" ? "landscape" : "portrait",
+      columns: Math.min(6, Math.max(1, asNumber("columns", defaultLayout.columns))),
+      rows: Math.min(10, Math.max(1, asNumber("rows", defaultLayout.rows))),
+      duplexMode: rawLayout.duplexMode === "manual" ? "manual" : "duplex",
+      backSideLayout:
+        rawLayout.backSideLayout === "auto" ||
+        rawLayout.backSideLayout === "mirror-horizontal" ||
+        rawLayout.backSideLayout === "mirror-vertical" ||
+        rawLayout.backSideLayout === "none"
+          ? rawLayout.backSideLayout
+          : defaultLayout.backSideLayout,
+      showCutLines: typeof rawLayout.showCutLines === "boolean" ? rawLayout.showCutLines : defaultLayout.showCutLines,
+      frontFontSize: Math.min(48, Math.max(8, asNumber("frontFontSize", defaultLayout.frontFontSize))),
+      backFontSize: Math.min(28, Math.max(6, asNumber("backFontSize", defaultLayout.backFontSize)))
+    },
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
 export function SheetForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const editId = searchParams.get("id");
   const initialSheet = useMemo(() => (editId ? getSheet(editId) : null), [editId]);
   const [sheet, setSheet] = useState<WordSheet>(() => initialSheet ?? createEmptySheet());
   const [bulkText, setBulkText] = useState("");
+  const [importMessage, setImportMessage] = useState("");
 
   const validWords = sheet.words.filter((item) => item.word.trim() && item.definition.trim());
 
@@ -84,6 +149,25 @@ export function SheetForm() {
     router.push(`/preview/${nextSheet.id}`);
   }
 
+  async function importJson(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const importedSheet = normalizeImportedSheet(JSON.parse(text));
+      setSheet(importedSheet);
+      setBulkText("");
+      setImportMessage(`Imported "${importedSheet.title}" with ${importedSheet.words.length} words.`);
+    } catch (error) {
+      setImportMessage(error instanceof Error ? error.message : "Could not import this JSON file.");
+    }
+  }
+
   return (
     <main className="mx-auto max-w-6xl px-5 py-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -93,10 +177,25 @@ export function SheetForm() {
             Paste vocabulary pairs, adjust the A4 grid, then save a printable sheet.
           </p>
         </div>
-        <Button variant="primary" onClick={saveAndPreview} disabled={!validWords.length}>
-          Save & Preview
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={importJson}
+            className="hidden"
+          />
+          <Button onClick={() => importInputRef.current?.click()}>Import JSON</Button>
+          <Button variant="primary" onClick={saveAndPreview} disabled={!validWords.length}>
+            Save & Preview
+          </Button>
+        </div>
       </div>
+      {importMessage ? (
+        <div className="mb-5 rounded-md border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700">
+          {importMessage}
+        </div>
+      ) : null}
 
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-5">

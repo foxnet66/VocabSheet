@@ -27,6 +27,7 @@ The app uses Next.js App Router, TypeScript, Tailwind CSS, and browser `localSto
   - Back page 2
 - Mirror back-side layout horizontally by default for duplex printing.
 - Print duplex, front-only, or back-only.
+- Import exported VocabSheet JSON files from the create page.
 - View, edit, duplicate, export, and delete saved sheets from history.
 
 ## Tech Stack
@@ -132,6 +133,12 @@ vocabsheet.sheets.v1
 
 Because there is no backend, saved sheets are local to the current browser and device.
 
+## Import And Export
+
+Use `Export JSON` on the history page to download a saved sheet.
+
+Use `Import JSON` on the create page to load an exported sheet back into the editor. Imported sheets receive a new sheet id and new word ids, so importing does not overwrite existing saved sheets until you click `Save & Preview`.
+
 ## Data Model
 
 ```ts
@@ -179,5 +186,4 @@ For A4 portrait, the page is `210mm x 297mm` with `10mm` padding, giving a print
 ## Current Limitations
 
 - Sheets are not synced across devices.
-- There is no import JSON flow yet, only export JSON.
 - Browser and printer drivers may render print margins differently, so a physical test print is recommended before printing large batches.
